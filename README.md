@@ -3,6 +3,12 @@
 This is a plugin for [Labtasker](https://github.com/fkcptlst/labtasker) that
 helps you to automatically split your bash script into submit script and job script.
 
+## Install
+
+```bash
+pip install labtasker-plugin-script-generate
+```
+
 ## Example
 
 You can find the code in the [demo](./demo) directory.

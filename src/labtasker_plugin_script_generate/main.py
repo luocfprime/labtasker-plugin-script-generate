@@ -30,7 +30,20 @@ class ScriptParser:
     """Handles parsing and processing of script files with special markers."""
 
     SHEBANG_DEFAULT = "#!/bin/bash"
-    VAR_PATTERN = re.compile(r"\$([a-zA-Z_][a-zA-Z0-9_]*)")
+
+    # Comprehensive pattern to match all variable forms in one pass
+    # 1. Simple $var
+    # 2. ${var} with modifiers
+    VAR_PATTERN = re.compile(
+        r"\$([a-zA-Z_][a-zA-Z0-9_]*)"  # Simple $var
+        r"|\${([a-zA-Z_][a-zA-Z0-9_]*)(?::?[^}]*)?}"  # ${var} with modifiers
+    )
+    
+
+    ARRAY_PATTERN = re.compile(
+        r"\${[a-zA-Z_][a-zA-Z0-9_]*\[.*?\]}"  # Any array access like ${array[idx]} or ${array[@]}
+    )
+    
     MARKER_SUBMIT = "#@submit"
     MARKER_TASK = "#@task"
     MARKER_END = "#@end"
@@ -72,13 +85,40 @@ class ScriptParser:
         if lines and lines[0].startswith("#!"):
             return lines[0].strip(), lines[1:]
         return self.SHEBANG_DEFAULT, lines
+    
+    def extract_shell_from_shebang(self, shebang: str) -> str:
+        """Extract the shell executable from the shebang line."""
+        if not shebang.startswith("#!"):
+            return "/bin/bash"  # Default shell if no valid shebang
+        
+        # Remove #! and any options, just get the executable path
+        parts = shebang[2:].strip().split()
+        if not parts:
+            return "/bin/bash"
+        
+        return parts[0]  # Return the executable path
 
     def extract_variables_from_content(self, content: List[str]) -> List[str]:
         """Extract all variables from a block of content."""
         block_text = "\n".join(content)
-        return sorted(
-            set(f"${match}" for match in self.VAR_PATTERN.findall(block_text))
-        )
+        variables = set()
+        
+        # First check for array usage and raise error if found
+        array_match = self.ARRAY_PATTERN.search(block_text)
+        if array_match:
+            raise ValueError(
+                f"Array syntax is not supported: '{array_match.group(0)}'\n"
+                "Please use simple variables instead of arrays in your #@task block. Or specify which variables to use manually."
+            )
+        
+        # Standard variable pattern matching
+        for match in self.VAR_PATTERN.finditer(block_text):
+            if match.group(1):  # Simple $var format
+                variables.add(f"${match.group(1)}")
+            elif match.group(2):  # ${var...} format with any modifiers
+                variables.add(f"${match.group(2)}")
+        
+        return sorted(variables)
 
     def extract_variables_from_task_marker(self, marker_text: str) -> List[str]:
         """Extract variables explicitly defined in a task marker."""
@@ -105,9 +145,12 @@ class ScriptParser:
 
         clean_vars = sorted({v.lstrip("$") for v in block.variables})
         delimiter = "LABTASKER_LOOP_EOF"
+        
+        # Get the shell from the shebang line
+        shell = self.extract_shell_from_shebang(self.submit_lines[0] if self.submit_lines else self.SHEBANG_DEFAULT)
 
         return [
-            f"labtasker loop <<'{delimiter}'",
+            f"labtasker loop --executable {shell} <<'{delimiter}'",
             *[f"{var}='%({var})'" for var in clean_vars],
             *block.lines,
             delimiter,
@@ -127,8 +170,9 @@ class ScriptParser:
             )
             return
 
+        # Add quotes around variable values to handle spaces and special characters
         params = " ".join(
-            [f"--{var.lstrip('$')} ${var.lstrip('$')}" for var in task.variables]
+            [f'--{var.lstrip("$")} "${var.lstrip("$")}"' for var in task.variables]
         )
         indent = " " * task.indentation
         self.submit_lines.append(f"{indent}labtasker task submit -- {params}")
@@ -266,7 +310,7 @@ def generate(
         )
         stdout_console.print(f"Generated run script: {run_output_path}", style="green")
 
-    except ValueError as e:
+    except (ValueError, NotImplementedError) as e:
         stderr_console.print(f"Error: {str(e)}", style="red")
         raise typer.Exit(1)
     except Exception as e:

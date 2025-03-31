@@ -3,13 +3,20 @@
 
 export CUDA_HOME=/usr/local/cuda-12.1
 
-for dataset in imagenet cifar10 mnist; do
-  for model in resnet50 vit transformer; do
-    LOG_DIR=/path/to/logs/$dataset/$model
+BASE_LOG_DIR=/path/to/logs
 
-    labtasker task submit -- --LOG_DIR $LOG_DIR --dataset $dataset --model $model
+DATASETS=("imagenet" "cifar10" "mnist" "custom_dataset")
+MODELS=("resnet50" "vit" "transformer" "alexnet")
 
+for idx in "${!DATASETS[@]}"; do
+  for model_idx in "${!MODELS[@]}"; do
+
+    DATASET=${DATASETS[$idx]}
+    MODEL=${MODELS[$model_idx]}
+    LOG_DIR="$BASE_LOG_DIR/$(echo "$DATASET" | tr '[:upper:]' '[:lower:]')/$MODEL"
+
+    labtasker task submit -- --CUDA_HOME "$CUDA_HOME" --DATASET "$DATASET" --LOG_DIR "$LOG_DIR" --MODEL "$MODEL"
   done
 done
 
-echo "done"
+echo "All tasks completed successfully."

@@ -38,12 +38,11 @@ class ScriptParser:
         r"\$([a-zA-Z_][a-zA-Z0-9_]*)"  # Simple $var
         r"|\${([a-zA-Z_][a-zA-Z0-9_]*)(?::?[^}]*)?}"  # ${var} with modifiers
     )
-    
 
     ARRAY_PATTERN = re.compile(
         r"\${[a-zA-Z_][a-zA-Z0-9_]*\[.*?\]}"  # Any array access like ${array[idx]} or ${array[@]}
     )
-    
+
     MARKER_SUBMIT = "#@submit"
     MARKER_TASK = "#@task"
     MARKER_END = "#@end"
@@ -85,24 +84,24 @@ class ScriptParser:
         if lines and lines[0].startswith("#!"):
             return lines[0].strip(), lines[1:]
         return self.SHEBANG_DEFAULT, lines
-    
+
     def extract_shell_from_shebang(self, shebang: str) -> str:
         """Extract the shell executable from the shebang line."""
         if not shebang.startswith("#!"):
             return "/bin/bash"  # Default shell if no valid shebang
-        
+
         # Remove #! and any options, just get the executable path
         parts = shebang[2:].strip().split()
         if not parts:
             return "/bin/bash"
-        
+
         return parts[0]  # Return the executable path
 
     def extract_variables_from_content(self, content: List[str]) -> List[str]:
         """Extract all variables from a block of content."""
         block_text = "\n".join(content)
         variables = set()
-        
+
         # First check for array usage and raise error if found
         array_match = self.ARRAY_PATTERN.search(block_text)
         if array_match:
@@ -110,14 +109,14 @@ class ScriptParser:
                 f"Array syntax is not supported: '{array_match.group(0)}'\n"
                 "Please use simple variables instead of arrays in your #@task block. Or specify which variables to use manually."
             )
-        
+
         # Standard variable pattern matching
         for match in self.VAR_PATTERN.finditer(block_text):
             if match.group(1):  # Simple $var format
                 variables.add(f"${match.group(1)}")
             elif match.group(2):  # ${var...} format with any modifiers
                 variables.add(f"${match.group(2)}")
-        
+
         return sorted(variables)
 
     def extract_variables_from_task_marker(self, marker_text: str) -> List[str]:
@@ -145,9 +144,11 @@ class ScriptParser:
 
         clean_vars = sorted({v.lstrip("$") for v in block.variables})
         delimiter = "LABTASKER_LOOP_EOF"
-        
+
         # Get the shell from the shebang line
-        shell = self.extract_shell_from_shebang(self.submit_lines[0] if self.submit_lines else self.SHEBANG_DEFAULT)
+        shell = self.extract_shell_from_shebang(
+            self.submit_lines[0] if self.submit_lines else self.SHEBANG_DEFAULT
+        )
 
         return [
             f"labtasker loop --executable {shell} <<'{delimiter}'",

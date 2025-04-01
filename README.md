@@ -1,6 +1,6 @@
 # labtasker-plugin-script-generate
 
-This is a plugin for [Labtasker](https://github.com/fkcptlst/labtasker) that
+This is a plugin for [Labtasker](https://github.com/luocfprime/labtasker) that
 helps you to automatically split your bash script into submit script and job script.
 
 ## Install

@@ -61,7 +61,7 @@ for dataset in imagenet cifar10 mnist; do
   for model in resnet50 vit transformer; do
     LOG_DIR=/path/to/logs/$dataset/$model
 
-    labtasker task submit -- --CUDA_HOME $CUDA_HOME --LOG_DIR $LOG_DIR --dataset $dataset --model $model
+    labtasker task submit -- --CUDA_HOME "$CUDA_HOME" --LOG_DIR "$LOG_DIR" --dataset "$dataset" --model "$model"
 
   done
 done
@@ -77,16 +77,18 @@ echo "done"
 
 export CUDA_HOME=/usr/local/cuda-12.1
 
-labtasker loop <<'LABTASKER_LOOP_EOF'
-CUDA_HOME='%(CUDA_HOME)'
-LOG_DIR='%(LOG_DIR)'
-dataset='%(dataset)'
-model='%(model)'
+LABTASKER_TASK_SCRIPT=$(mktemp)
+cat <<'LABTASKER_LOOP_EOF' > "$LABTASKER_TASK_SCRIPT"
+CUDA_HOME=%(CUDA_HOME)
+LOG_DIR=%(LOG_DIR)
+dataset=%(dataset)
+model=%(model)
     python train.py --dataset $dataset \
       --model $model \
       --cuda-home $CUDA_HOME \
       --log-dir $LOG_DIR
 LABTASKER_LOOP_EOF
+labtasker loop --executable /bin/bash --script-path $LABTASKER_TASK_SCRIPT
 
 echo "done"
 ```

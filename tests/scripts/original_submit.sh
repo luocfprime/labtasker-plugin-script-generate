@@ -6,16 +6,21 @@ export CUDA_HOME=/usr/local/cuda-12.1
 BASE_LOG_DIR=/path/to/logs
 
 DATASETS=("imagenet" "cifar10" "mnist" "custom_dataset")
+DATASET_DESCRIPTIONS=("A person's \"image\" net" "A person's cifar 10" "A person's mnist" "A person's custom dataset")
+
 MODELS=("resnet50" "vit" "transformer" "alexnet")
 
 for idx in "${!DATASETS[@]}"; do
   for model_idx in "${!MODELS[@]}"; do
 
+    DATASET_DESCRIPTION=${DATASET_DESCRIPTIONS[$idx]}
     DATASET=${DATASETS[$idx]}
     MODEL=${MODELS[$model_idx]}
     LOG_DIR="$BASE_LOG_DIR/$(echo "$DATASET" | tr '[:upper:]' '[:lower:]')/$MODEL"
 
-    labtasker task submit -- --CUDA_HOME "$CUDA_HOME" --DATASET "$DATASET" --LOG_DIR "$LOG_DIR" --MODEL "$MODEL"
+    echo "Dataset Description: ${DATASET_DESCRIPTION}"
+
+    labtasker task submit -- --CUDA_HOME "$CUDA_HOME" --DATASET "$DATASET" --DATASET_DESCRIPTION "$DATASET_DESCRIPTION" --LOG_DIR "$LOG_DIR" --MODEL "$MODEL"
   done
 done
 

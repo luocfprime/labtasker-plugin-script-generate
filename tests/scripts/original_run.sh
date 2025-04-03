@@ -6,22 +6,29 @@ export CUDA_HOME=/usr/local/cuda-12.1
 BASE_LOG_DIR=/path/to/logs
 
 DATASETS=("imagenet" "cifar10" "mnist" "custom_dataset")
+DATASET_DESCRIPTIONS=("A person's \"image\" net" "A person's cifar 10" "A person's mnist" "A person's custom dataset")
+
 MODELS=("resnet50" "vit" "transformer" "alexnet")
 
-labtasker loop --executable /bin/bash <<'LABTASKER_LOOP_EOF'
-CUDA_HOME='%(CUDA_HOME)'
-DATASET='%(DATASET)'
-LOG_DIR='%(LOG_DIR)'
-MODEL='%(MODEL)'
+LABTASKER_TASK_SCRIPT=$(mktemp)
+cat <<'LABTASKER_LOOP_EOF' > "$LABTASKER_TASK_SCRIPT"
+CUDA_HOME=%(CUDA_HOME)
+DATASET=%(DATASET)
+DATASET_DESCRIPTION=%(DATASET_DESCRIPTION)
+LOG_DIR=%(LOG_DIR)
+MODEL=%(MODEL)
     echo "Processing Dataset: $(echo "$DATASET" | tr '[:lower:]' '[:upper:]')"  # Uppercase the dataset name
+    echo "Dataset Description: ${DATASET_DESCRIPTION}"
     echo "Model (short): ${MODEL:0:3}"        # First three letters of model name
     echo "Log Directory: ${LOG_DIR}"
 
     # Execute training command
     python train.py --dataset "$DATASET" \
+                    --dataset-description "$DATASET_DESCRIPTION" \
                     --model "$MODEL" \
                     --cuda-home "$CUDA_HOME" \
                     --log-dir "$LOG_DIR"
 LABTASKER_LOOP_EOF
+labtasker loop --executable /bin/bash --script-path $LABTASKER_TASK_SCRIPT
 
 echo "All tasks completed successfully."

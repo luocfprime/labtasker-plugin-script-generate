@@ -137,13 +137,26 @@ class ScriptParser:
 
         return self.extract_variables_from_content(block_content)
 
-    def build_loop_command(self, block: ScriptBlock) -> List[str]:
-        """Construct labtasker loop command using heredoc syntax."""
+    def build_task_block(self, block: ScriptBlock) -> List[str]:
         if not block.variables:
             return []
 
         clean_vars = sorted({v.lstrip("$") for v in block.variables})
         delimiter = "LABTASKER_LOOP_EOF"
+
+        return [
+            "LABTASKER_TASK_SCRIPT=$(mktemp)",
+            f"cat <<'{delimiter}' > \"$LABTASKER_TASK_SCRIPT\"",
+            *[f"{var}=%({var})" for var in clean_vars],
+            *block.lines,
+            delimiter,
+        ]
+
+    def build_loop_command(self, block: ScriptBlock) -> List[str]:
+        """Construct labtasker loop command using heredoc syntax."""
+        task_block = self.build_task_block(block)
+        if not task_block:
+            return []
 
         # Get the shell from the shebang line
         shell = self.extract_shell_from_shebang(
@@ -151,10 +164,8 @@ class ScriptParser:
         )
 
         return [
-            f"labtasker loop --executable {shell} <<'{delimiter}'",
-            *[f"{var}='%({var})'" for var in clean_vars],
-            *block.lines,
-            delimiter,
+            *task_block,
+            f"labtasker loop --executable {shell} --script-path $LABTASKER_TASK_SCRIPT",
         ]
 
     def create_task_block(self, line: str, variables: List[str]) -> ScriptBlock:
@@ -314,6 +325,6 @@ def generate(
     except (ValueError, NotImplementedError) as e:
         stderr_console.print(f"Error: {str(e)}", style="red")
         raise typer.Exit(1)
-    except Exception as e:
-        stderr_console.print(f"Unexpected error: {str(e)}", style="red")
-        raise typer.Exit(1)
+    # except Exception as e:
+    #     stderr_console.print(f"Unexpected error: {str(e)}", style="red")
+    #     raise typer.Exit(1)

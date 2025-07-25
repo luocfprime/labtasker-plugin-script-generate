@@ -20,7 +20,7 @@ for idx in "${!DATASETS[@]}"; do
 
     echo "Dataset Description: ${DATASET_DESCRIPTION}"
 
-    labtasker task submit -- --CUDA_HOME "$CUDA_HOME" --DATASET "$DATASET" --DATASET_DESCRIPTION "$DATASET_DESCRIPTION" --LOG_DIR "$LOG_DIR" --MODEL "$MODEL"
+    labtasker task submit -- --CUDA_HOME="$CUDA_HOME" --DATASET="$DATASET" --DATASET_DESCRIPTION="$DATASET_DESCRIPTION" --LOG_DIR="$LOG_DIR" --MODEL="$MODEL"
   done
 done
 

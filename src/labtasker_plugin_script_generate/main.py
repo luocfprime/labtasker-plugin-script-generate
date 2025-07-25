@@ -184,7 +184,7 @@ class ScriptParser:
 
         # Add quotes around variable values to handle spaces and special characters
         params = " ".join(
-            [f'--{var.lstrip("$")} "${var.lstrip("$")}"' for var in task.variables]
+            [f'--{var.lstrip("$")}="${var.lstrip("$")}"' for var in task.variables]
         )
         indent = " " * task.indentation
         self.submit_lines.append(f"{indent}labtasker task submit -- {params}")

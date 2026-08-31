@@ -10,8 +10,8 @@ DATASET_DESCRIPTIONS=("A person's \"image\" net" "A person's cifar 10" "A person
 MODELS=("resnet50" "vit" "transformer" "alexnet")
 
 #@submit
-for idx in "${!DATASETS[@]}"; do  
-  for model_idx in "${!MODELS[@]}"; do    
+for idx in "${!DATASETS[@]}"; do
+  for model_idx in "${!MODELS[@]}"; do
 
     DATASET_DESCRIPTION=${DATASET_DESCRIPTIONS[$idx]}
     DATASET=${DATASETS[$idx]}

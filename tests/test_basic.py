@@ -4,8 +4,9 @@ from pathlib import Path
 from typing import Tuple
 
 import pytest
-from labtasker_plugin_script_generate.main import app
 from typer.testing import CliRunner
+
+from labtasker_plugin_script_generate.main import app
 
 runner = CliRunner()
 

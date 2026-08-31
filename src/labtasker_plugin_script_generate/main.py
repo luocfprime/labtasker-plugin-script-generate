@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 import typer
-
 from labtasker.client.cli.cli import app
 from labtasker.client.core.logging import stderr_console, stdout_console
 
